@@ -34,23 +34,53 @@ class _HomeToDoPageState extends State<HomeToDoPage> {
     });
   }
 
-  void handleSave() {
+  void handleSave(bool isEdit, int? index, bool isCompleted) {
     setState(() {
-      db.toDoList.add([_controler.text, false]);
+      if (isEdit && index != null) {
+        db.toDoList[index][0] = _controler.text;
+        db.toDoList[index][1] = isCompleted;
+      } else {
+        db.toDoList.add([_controler.text, false]);
+      }
       db.uploadData();
       Navigator.pop(context);
       _controler.clear();
     });
   }
 
-  void createNewTask() {
+  void createNewTask(bool isEdit, int? index) {
+    bool tempIsCompleted = false;
+
+    if (isEdit && index != null) {
+      _controler.text = db.toDoList[index][0];
+      tempIsCompleted = db.toDoList[index][1];
+    } else {
+      _controler.clear();
+      tempIsCompleted = false;
+    }
+
     showDialog(
       context: context,
       builder: (context) {
-        return DialogBox(
-          controler: _controler,
-          onCancel: () => Navigator.pop(context),
-          onSave: handleSave,
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return DialogBox(
+              isEdit: isEdit,
+              index: index,
+              controler: _controler,
+              isCompleted: tempIsCompleted,
+              onCompletedChanged: (value) {
+                setState(() {
+                  tempIsCompleted = value ?? false;
+                });
+              },
+              onCancel: () {
+                Navigator.pop(context);
+                _controler.clear();
+              },
+              onSave: () => handleSave(isEdit, index, tempIsCompleted),
+            );
+          },
         );
       },
     );
@@ -65,28 +95,106 @@ class _HomeToDoPageState extends State<HomeToDoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.yellow[200],
-      appBar: AppBar(
-        backgroundColor: Colors.yellow,
-        elevation: 0,
-        title: Center(child: Text("TO DO")),
-      ),
-      body: ListView.builder(
+    Widget content;
+
+    if (db.toDoList.isEmpty) {
+      content = Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.task_alt, size: 80, color: Colors.white.withAlpha(50)),
+            SizedBox(height: 16),
+            Text(
+              "No tasks yet!",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              "Add a task to get started",
+              style: TextStyle(fontSize: 16, color: Colors.white.withAlpha(80)),
+            ),
+          ],
+        ),
+      );
+    } else {
+      content = ListView.builder(
+        padding: EdgeInsets.all(16),
         itemCount: db.toDoList.length,
         itemBuilder: (context, index) {
           return ToDOTile(
+            onEdit: () => createNewTask(true, index),
             taskName: db.toDoList[index][0],
             taskComplted: db.toDoList[index][1],
             onChanged: (value) => checkBoxChanged(value, index),
             deleteTask: (p0) => deleteTaskByslide(index),
           );
         },
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFFFE5B4), Color(0xFFFFB347), Color(0xFFFF8C42)],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.all(20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Hello, User! 👋",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          "You have ${db.toDoList.length} tasks",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.normal,
+                            color: const Color(0xFFFF8C42),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(child: content),
+            ],
+          ),
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.yellow,
-        onPressed: createNewTask,
-        child: Icon(Icons.add),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => createNewTask(false, null),
+        backgroundColor: Colors.white,
+        icon: Icon(Icons.add, color: Color(0xFFFF8C42)),
+        label: Text(
+          "Add Task",
+          style: TextStyle(
+            color: Color(0xFFFF8C42),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       ),
     );
   }
