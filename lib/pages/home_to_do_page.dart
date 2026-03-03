@@ -37,9 +37,21 @@ class _HomeToDoPageState extends State<HomeToDoPage> {
   void handleSave(bool isEdit, int? index, bool isCompleted) {
     setState(() {
       if (isEdit && index != null) {
+        if (_controler.text.isEmpty) {
+          db.toDoList.removeAt(index);
+          db.uploadData();
+          Navigator.pop(context);
+          _controler.clear();
+          return;
+        }
         db.toDoList[index][0] = _controler.text;
         db.toDoList[index][1] = isCompleted;
       } else {
+        if (_controler.text.isEmpty) {
+          Navigator.pop(context);
+          _controler.clear();
+          return;
+        }
         db.toDoList.add([_controler.text, false]);
       }
       db.uploadData();
