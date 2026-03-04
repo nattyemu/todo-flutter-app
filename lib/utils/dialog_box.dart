@@ -56,6 +56,7 @@ class DialogBox extends StatelessWidget {
                 ),
               ),
             ),
+            // Show the "Mark as completed" option only when editing a task
             if (isEdit) ...[
               SizedBox(height: 16),
               Container(
