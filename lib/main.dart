@@ -4,6 +4,7 @@ import 'package:todo_app/pages/home_to_do_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Initialize Hive
   await Hive.initFlutter();
 
   await Hive.openBox("myBox");
